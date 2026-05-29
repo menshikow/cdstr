@@ -1,0 +1,33 @@
+
+# ctringslib - TODO
+
+## Implemented (test + polish)
+- [x] `string_init` — create String from C string (needs NULL-check ordering fix)
+- [x] `string_destroy` — free memory, invalidate struct
+- [x] `string_append` — skeleton only, needs actual append logic
+
+## Implementation
+- [ ] Fix `string_init`: check `s_out == NULL` before dereferencing
+- [ ] Complete `string_append`: measure slice length, realloc if needed, copy bytes
+- [ ] `string_reserve` — pre-allocate capacity
+- [ ] `string_clone` — deep copy
+- [ ] `string_shrink` — shrink capacity to fit
+- [ ] push / insert
+- [ ] lexicographical comparison
+- [ ] find (substring search)
+- [ ] `string_view` (non-owning slice)
+- [ ] converting back to C string (`c_str`)
+- [ ] trim / ltrim / rtrim / join / case conversion
+- [ ] string formatting (sprintf-style)
+
+## Infrastructure
+- [ ] Build system (Makefile or CMake)
+- [ ] Test suite (tests/)
+- [ ] CI setup
+- [ ] README with usage examples
+
+## Deep concepts (future)
+- [ ] Shallow-copy problem — destroying one alias invalidates others
+- [ ] Reference counting / COW (Copy on Write)
+- [ ] Integer overflow safety for huge allocations
+- [ ] SSO (Small String Optimization)
