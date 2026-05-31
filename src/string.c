@@ -113,4 +113,34 @@ ErrorCode string_append(String *s, const char *slice) {
   return SUCCESS;
 }
 
+// think about 1. Self-clone, 2. What if src is destroyed?, 3. What if dest is
+// in the destroyed/empty state?
+
+ErrorCode string_clone(String *dest, String const *src) {
+  if (src == NULL || dest == NULL) {
+    return ERR_NULL_ARGUMENT;
+  }
+
+  if (dest->cap < src->len + 1) {
+    size_t tmp_cap = src->len * 2;
+    char *tmp_ptr = realloc(dest->ptr, tmp_cap);
+
+    if (tmp_ptr == NULL) {
+      return ERR_ALLOC_FAILED;
+    }
+
+    dest->ptr = tmp_ptr;
+    dest->cap = tmp_cap;
+    copy_bytes(dest->ptr, src->ptr, src->len + 1);
+    dest->len = src->len;
+
+    return SUCCESS;
+  }
+
+  copy_bytes(dest->ptr, src->ptr, src->len + 1);
+  dest->len = src->len;
+
+  return SUCCESS;
+}
+
 int main() { return 0; }

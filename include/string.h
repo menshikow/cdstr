@@ -32,10 +32,9 @@
 
 typedef enum {
   SUCCESS = 0,
-  ERR_NULL_PTR,
-  ERR_STRING_INIT_FAILED,
-  ERR_NULL_ARGUMENT,
   ERR_ALLOC_FAILED,
+  ERR_NULL_ARGUMENT,
+  ERR_STRING_INIT_FAILED,
   ERR_GENERAL,
 } ErrorCode;
 
@@ -175,7 +174,7 @@ ErrorCode string_append(String *s, const char *slice);
  * allocation policy
  * ========================================================================== */
 
-ErrorCode string_reserve();
+ErrorCode string_reserve(String *s);
 
 /* ============================================================================
  * COPYING
@@ -185,6 +184,6 @@ ErrorCode string_reserve();
  * ownership and document the problem with char *b = a;
  * ========================================================================== */
 
-ErrorCode string_clone();
+ErrorCode string_clone(String *s_dest, String const *s_src);
 
 #endif /* STRING_H */

@@ -1,7 +1,9 @@
-- TODk
+- TODO
 
-- [ ] improve the header file
-- [ ] implement strcpy and memcpy
+- what is a valid string? 
+
+- [x] improve the header file
+- [x] implement strcpy and memcpy
 - [ ] implement string_reserve
 - [ ] implement string_clone 
 - [ ] implement string_shrink
@@ -26,4 +28,5 @@ Possible problems:
 - [ ] reference couting / copy on write
 - [ ] integer overflow for huge allocations
 - [ ] small string omptimizations
+
 
