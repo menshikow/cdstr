@@ -4,8 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// maybe later implement:
-// size_t strnlen_s( const char* str, size_t strsz );
+// later impelemnt a strlen in a slice
 
 size_t my_strlen(const char *string_start) {
   if (string_start == NULL) {
@@ -20,11 +19,24 @@ size_t my_strlen(const char *string_start) {
   return string_end - string_start;
 }
 
-void *my_memcpy(void *restrict dest, const void *restrict src, size_t count) {}
+static size_t copy_bytes(char *restrict dest, const void *restrict src,
+                         size_t count) {
+
+  size_t bytes_to_copy = count;
+  size_t copied = bytes_to_copy;
+
+  const unsigned char *s = src;
+
+  while (bytes_to_copy--) {
+    *dest++ = *s++;
+  }
+
+  return copied;
+}
 
 ErrorCode string_init(String *s_out, const char *s_in) {
   if (s_out == NULL) {
-    return ERR_NULL_PTR;
+    return ERR_NULL_ARGUMENT;
   }
 
   if (s_in == NULL) {
@@ -32,8 +44,9 @@ ErrorCode string_init(String *s_out, const char *s_in) {
     s_out->len = 0;
     s_out->cap = 0;
 
-    return ERR_NULL_PTR;
+    return ERR_NULL_ARGUMENT;
   }
+
   s_out->ptr = NULL;
   s_out->len = 0;
   s_out->cap = DEFAULT_CAPACITY;
@@ -49,17 +62,14 @@ ErrorCode string_init(String *s_out, const char *s_in) {
     return ERR_ALLOC_FAILED;
   }
 
-  for (size_t i = 0; s_in[i] != '\0'; i++) {
-    s_out->ptr[i] = s_in[i];
-  }
-  s_out->ptr[s_out->len] = '\0';
+  copy_bytes(s_out->ptr, s_in, s_out->len + 1);
 
   return SUCCESS;
 }
 
 ErrorCode string_destroy(String *s) {
   if (s == NULL) {
-    return ERR_NULL_PTR;
+    return ERR_NULL_ARGUMENT;
   }
 
   free(s->ptr);
@@ -96,12 +106,11 @@ ErrorCode string_append(String *s, const char *slice) {
     s->cap = tmp_cap;
   }
 
-  for (size_t i = 0; slice[i] != '\0'; i++) {
-    s->ptr[s->len + i] = slice[i];
-  }
+  copy_bytes(s->ptr + s->len, slice, slice_len + 1);
 
   s->len = new_len;
-  s->ptr[s->len] = '\0';
 
   return SUCCESS;
 }
+
+int main() { return 0; }
