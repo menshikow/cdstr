@@ -15,13 +15,15 @@
 #define DEFAULT_CAPACITY 16
 
 /* ============================================================================
- * LIB INVARIANTES
- *
- * 1. ptr != NULL
- * 2. cap >= len + 1a (0 <= len < cap)
- * 3. ptr[len] == '\0'
- * 4. ptr points to a writable allocation of at least cap bytes
- * 5. String uniquely owns that allocation
+  VALID STRING INVARIANT:
+  s != NULL
+  ptr != NULL
+  cap >= len + 1
+  len >= 0
+  ptr[len] == '\0'
+
+  INVALID STATE:
+  does not exist (freed memory is not a “state”)
  * ==========================================================================
  */
 
@@ -37,24 +39,6 @@ typedef enum {
   ERR_STRING_INIT_FAILED,
   ERR_GENERAL,
 } ErrorCode;
-
-/* ============================================================================
- * STRING TYPE
- *
- * invalid String:
- * - ptr == NULL
- * - len == 0
- * - cap == 0
- *
- * invalid/uninitialized
- * ↓
- * initialized/valid
- * ↓
- * destroyed/invalid
- *
- * Many systems abstractions are fundamentally:
- * controlled state transitions.
- * ========================================================================== */
 
 typedef struct {
   char *ptr;
@@ -174,7 +158,7 @@ ErrorCode string_append(String *s, const char *slice);
  * allocation policy
  * ========================================================================== */
 
-ErrorCode string_reserve(String *s);
+ErrorCode string_reserve(String *s, size_t add_cap);
 
 /* ============================================================================
  * COPYING

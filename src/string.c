@@ -143,4 +143,26 @@ ErrorCode string_clone(String *dest, String const *src) {
   return SUCCESS;
 }
 
+ErrorCode string_reserve(String *s, size_t add_cap) {
+  if (s == NULL || s->ptr == NULL) {
+    return ERR_NULL_ARGUMENT;
+  }
+
+  if (add_cap == 0) {
+    return SUCCESS;
+  }
+
+  size_t new_cap = s->cap + add_cap;
+
+  char *tmp_ptr = realloc(s->ptr, new_cap);
+  if (tmp_ptr == NULL) {
+    return ERR_ALLOC_FAILED;
+  }
+
+  s->ptr = tmp_ptr;
+  s->cap = new_cap;
+
+  return SUCCESS;
+}
+
 int main() { return 0; }
