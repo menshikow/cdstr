@@ -1,5 +1,5 @@
-## Credits and License
+# SSTR - simple string
 
-- Inspired by antirez's Redis SDS library: https://github.com/antirez/sds
+## License
 
 [MIT LICENSE](LICENSE)

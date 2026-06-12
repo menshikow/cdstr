@@ -1,12 +1,50 @@
-#include "../include/sstr.h"
+#ifndef SSTR_H
+#define SSTR_H
 
-#include <ctype.h>
+#define DEFAULT_CAPACITY 16
+#define SSTR_NPOS ((size_t)-1)
+
+/*
+ * VALID STRING:
+ *
+ *   s != NULL
+ *
+ *   Either:
+ *     ptr == NULL
+ *     len == 0
+ *     cap == 0
+ *
+ *   Or:
+ *     ptr != NULL
+ *     cap >= len + 1
+ *     ptr[len] == '\0'
+ *
+  Functions that modify the buffer (clear, insert, trim, etc.)
+ * return ERR_INVALID_STATE if the string is in the zero/unallocated state.
+ */
+
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-size_t sstr_strlen(const char *string_start) {
+typedef enum {
+  SUCCESS = 0,
+  ERR_NULL_ARGUMENT,
+  ERR_OUT_OF_MEMORY,
+  ERR_OUT_OF_BOUNDS,
+  ERR_STRING_INIT_FAILED,
+} Err;
+
+typedef struct {
+
+  char *ptr;
+  size_t len;
+  size_t cap;
+} String;
+
+// Helper functions — static inline (always visible)
+static inline size_t min_size(size_t a, size_t b) { return a < b ? a : b; }
+
+static inline size_t sstr_strlen(const char *string_start) {
   if (string_start == NULL) {
     return 0;
   }
@@ -19,9 +57,8 @@ size_t sstr_strlen(const char *string_start) {
   return string_end - string_start;
 }
 
-size_t sstr_memcpy(char *restrict to, const void *restrict from,
-                   size_t bytes_num) {
-
+static inline size_t sstr_memcpy(char *restrict to, const void *restrict from,
+                                 size_t bytes_num) {
   size_t bytes_to_copy = bytes_num;
   size_t copied = bytes_to_copy;
 
@@ -33,6 +70,68 @@ size_t sstr_memcpy(char *restrict to, const void *restrict from,
 
   return copied;
 }
+
+// Public API declarations
+Err sstr_init(String *s, const char *cstr);
+Err sstr_destroy(String *s);
+Err sstr_clear(String *s);
+
+Err sstr_append(String *s, const char *slice);
+Err sstr_append_n(String *s, const char *slice, size_t len);
+
+Err sstr_insert(String *s, size_t index, const char *slice);
+
+static inline size_t sstr_len(const String *s) {
+  if (s == NULL) {
+    return ERR_NULL_ARGUMENT;
+  }
+  return s->len;
+}
+
+static inline size_t sstr_cap(const String *s) {
+  if (s == NULL) {
+    return ERR_NULL_ARGUMENT;
+  }
+  return s->cap;
+}
+
+Err sstr_copy(String *s_dest, const String *s_src);
+Err sstr_reserve(String *s, size_t count);
+
+static inline bool sstr_empty(const String *s) {
+  if (s == NULL) {
+    return true;
+  }
+  return (s->len == 0);
+}
+
+Err sstr_shrink(String *s);
+
+Err sstr_trim(String *s);
+Err sstr_ltrim(String *s);
+Err sstr_rtrim(String *s);
+
+char *sstr_cstr(const String *s);
+
+Err sstr_tolower(String *s);
+Err sstr_toupper(String *s);
+
+// < 0 if a < b
+// 0 if a == b
+// > 0 if a > b
+int sstr_cmp(const String *s1, const String *s2);
+
+Err sstr_at(const String *s, size_t index,
+            char *out); // bounds-checked index access
+
+size_t sstr_find(const String *str, const char *substr);
+
+// ── Implementation ────────────────────────────────────────────────────
+#if defined(SSTR_IMPLEMENTATION) && !defined(SSTR_IMPLEMENTED)
+#define SSTR_IMPLEMENTED
+
+#include <ctype.h>
+#include <string.h>
 
 Err sstr_init(String *s_out, const char *s_in) {
   if (s_out == NULL) {
@@ -338,30 +437,6 @@ Err sstr_trim(String *s) {
   return SUCCESS;
 }
 
-size_t sstr_len(const String *s) {
-  if (s == NULL) {
-    return ERR_NULL_ARGUMENT;
-  }
-
-  return s->len;
-}
-
-size_t sstr_cap(const String *s) {
-  if (s == NULL) {
-    return ERR_NULL_ARGUMENT;
-  }
-
-  return s->cap;
-}
-
-bool sstr_empty(const String *s) {
-  if (s == NULL) {
-    return true;
-  }
-
-  return (s->len == 0);
-}
-
 Err sstr_tolower(String *s) {
   if (s == NULL) {
     return ERR_NULL_ARGUMENT;
@@ -469,3 +544,7 @@ size_t sstr_find(const String *str, const char *substr) {
 
   return SSTR_NPOS;
 }
+
+#endif /* SSTR_IMPLEMENTATION */
+
+#endif /* SSTR_H */
