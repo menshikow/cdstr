@@ -1,3 +1,24 @@
+// Copyright 2026 Andrey Menshikov <andreydmenshikov@gmail.com@>
+
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 #ifndef SSTR_H
 #define SSTR_H
 
@@ -19,7 +40,7 @@
  *     cap >= len + 1
  *     ptr[len] == '\0'
  *
-  Functions that modify the buffer (clear, insert, trim, etc.)
+ * Functions that modify the buffer (clear, insert, trim, etc.)
  * return ERR_INVALID_STATE if the string is in the zero/unallocated state.
  */
 
@@ -28,6 +49,7 @@
 
 typedef enum {
   SUCCESS = 0,
+  ERR_INVALID_STATE,
   ERR_NULL_ARGUMENT,
   ERR_OUT_OF_MEMORY,
   ERR_OUT_OF_BOUNDS,
@@ -59,12 +81,10 @@ static inline size_t sstr_strlen(const char *string_start) {
 
 static inline size_t sstr_memcpy(char *restrict to, const void *restrict from,
                                  size_t bytes_num) {
-  size_t bytes_to_copy = bytes_num;
-  size_t copied = bytes_to_copy;
-
   const unsigned char *s = from;
+  size_t copied = bytes_num;
 
-  while (bytes_to_copy--) {
+  while (bytes_num--) {
     *to++ = *s++;
   }
 
@@ -83,14 +103,14 @@ Err sstr_insert(String *s, size_t index, const char *slice);
 
 static inline size_t sstr_len(const String *s) {
   if (s == NULL) {
-    return ERR_NULL_ARGUMENT;
+    return 0;
   }
   return s->len;
 }
 
 static inline size_t sstr_cap(const String *s) {
   if (s == NULL) {
-    return ERR_NULL_ARGUMENT;
+    return 0;
   }
   return s->cap;
 }
@@ -111,7 +131,7 @@ Err sstr_trim(String *s);
 Err sstr_ltrim(String *s);
 Err sstr_rtrim(String *s);
 
-char *sstr_cstr(const String *s);
+char *sstr_cstr(const String *s, char *buf, size_t buf_size);
 
 Err sstr_tolower(String *s);
 Err sstr_toupper(String *s);
@@ -161,6 +181,10 @@ Err sstr_init(String *s_out, const char *s_in) {
 }
 
 Err sstr_destroy(String *s) {
+  if (s == NULL) {
+    return ERR_NULL_ARGUMENT;
+  }
+
   free(s->ptr);
 
   *s = (String){0};
@@ -171,6 +195,10 @@ Err sstr_destroy(String *s) {
 Err sstr_clear(String *s) {
   if (s == NULL) {
     return ERR_NULL_ARGUMENT;
+  }
+
+  if (s->ptr == NULL) {
+    return ERR_INVALID_STATE;
   }
 
   s->ptr[0] = '\0';
@@ -185,7 +213,7 @@ Err sstr_append(String *s, const char *slice) {
   }
 
   if (s->ptr == NULL) {
-    return (sstr_init(s, slice) == SUCCESS) ? SUCCESS : ERR_STRING_INIT_FAILED;
+    return ERR_INVALID_STATE;
   }
 
   size_t slice_len = sstr_strlen(slice);
@@ -223,7 +251,7 @@ Err sstr_append_n(String *s, const char *slice, size_t len) {
   }
 
   if (s->ptr == NULL) {
-    return sstr_init(s, slice);
+    return ERR_INVALID_STATE;
   }
 
   size_t new_len = s->len + len;
@@ -255,6 +283,10 @@ Err sstr_append_n(String *s, const char *slice, size_t len) {
 Err sstr_insert(String *s, size_t index, const char *slice) {
   if (s == NULL || slice == NULL) {
     return ERR_NULL_ARGUMENT;
+  }
+
+  if (s->ptr == NULL) {
+    return ERR_INVALID_STATE;
   }
 
   if (index > s->len) {
@@ -297,6 +329,10 @@ Err sstr_copy(String *dest, String const *src) {
     return ERR_NULL_ARGUMENT;
   }
 
+  if (dest->ptr == NULL || src->ptr == NULL) {
+    return ERR_INVALID_STATE;
+  }
+
   if (dest->cap < src->len + 1) {
     size_t tmp_cap = src->len * 2;
     char *tmp_ptr = realloc(dest->ptr, tmp_cap);
@@ -319,10 +355,13 @@ Err sstr_copy(String *dest, String const *src) {
   return SUCCESS;
 }
 
-// TODO check the overflow
 Err sstr_reserve(String *s, size_t count) {
-  if (s == NULL || s->ptr == NULL) {
+  if (s == NULL) {
     return ERR_NULL_ARGUMENT;
+  }
+
+  if (s->ptr == NULL) {
+    return ERR_INVALID_STATE;
   }
 
   if (count == 0) {
@@ -347,6 +386,10 @@ Err sstr_shrink(String *s) {
     return ERR_NULL_ARGUMENT;
   }
 
+  if (s->ptr == NULL) {
+    return ERR_INVALID_STATE;
+  }
+
   if (s->cap == s->len + 1) {
     return SUCCESS;
   }
@@ -365,8 +408,12 @@ Err sstr_shrink(String *s) {
 }
 
 Err sstr_ltrim(String *s) {
-  if (s == NULL || s->ptr == NULL) {
+  if (s == NULL) {
     return ERR_NULL_ARGUMENT;
+  }
+
+  if (s->ptr == NULL) {
+    return ERR_INVALID_STATE;
   }
 
   if (s->len == 0) {
@@ -387,8 +434,12 @@ Err sstr_ltrim(String *s) {
 }
 
 Err sstr_rtrim(String *s) {
-  if (s == NULL || s->ptr == NULL) {
+  if (s == NULL) {
     return ERR_NULL_ARGUMENT;
+  }
+
+  if (s->ptr == NULL) {
+    return ERR_INVALID_STATE;
   }
 
   if (s->len == 0) {
@@ -410,6 +461,10 @@ Err sstr_rtrim(String *s) {
 Err sstr_trim(String *s) {
   if (s == NULL) {
     return ERR_NULL_ARGUMENT;
+  }
+
+  if (s->ptr == NULL) {
+    return ERR_INVALID_STATE;
   }
 
   if (s->len == 0) {
@@ -442,6 +497,10 @@ Err sstr_tolower(String *s) {
     return ERR_NULL_ARGUMENT;
   }
 
+  if (s->ptr == NULL) {
+    return ERR_INVALID_STATE;
+  }
+
   if (s->len == 0) {
     return SUCCESS;
   }
@@ -458,6 +517,10 @@ Err sstr_toupper(String *s) {
     return ERR_NULL_ARGUMENT;
   }
 
+  if (s->ptr == NULL) {
+    return ERR_INVALID_STATE;
+  }
+
   if (s->len == 0) {
     return SUCCESS;
   }
@@ -469,22 +532,22 @@ Err sstr_toupper(String *s) {
   return SUCCESS;
 }
 
-// errors are not checked and not destroying the string
-char *sstr_cstr(const String *s) {
-  if (s == NULL || s->ptr == NULL) {
-    char *buf = malloc(1);
-    if (buf) {
-      buf[0] = '\0';
-    }
-    return buf;
-  }
-
-  char *buf = malloc(s->len + 1);
-  if (buf == NULL) {
+// caller provided buffer
+char *sstr_cstr(const String *s, char *buf, size_t buf_size) {
+  if (buf == NULL || buf_size == 0) {
     return NULL;
   }
 
-  sstr_memcpy(buf, s->ptr, s->len);
+  if (s == NULL || s->ptr == NULL) {
+    buf[0] = '\0';
+    return buf;
+  }
+
+  if (buf_size < s->len + 1) {
+    return NULL; // insufficient space
+  }
+
+  memcpy(buf, s->ptr, s->len);
   buf[s->len] = '\0';
 
   return buf;
