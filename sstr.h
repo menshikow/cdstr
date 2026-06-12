@@ -53,7 +53,6 @@ typedef enum {
   ERR_NULL_ARGUMENT,
   ERR_OUT_OF_MEMORY,
   ERR_OUT_OF_BOUNDS,
-  ERR_STRING_INIT_FAILED,
 } Err;
 
 typedef struct {
@@ -92,7 +91,7 @@ static inline size_t sstr_memcpy(char *restrict to, const void *restrict from,
 }
 
 // Public API declarations
-Err sstr_init(String *s, const char *cstr);
+Err sstr_init(String *s_out, const char *s_in);
 Err sstr_destroy(String *s);
 Err sstr_clear(String *s);
 
@@ -115,7 +114,7 @@ static inline size_t sstr_cap(const String *s) {
   return s->cap;
 }
 
-Err sstr_copy(String *s_dest, const String *s_src);
+Err sstr_copy(String *dest, const String *src);
 Err sstr_reserve(String *s, size_t count);
 
 static inline bool sstr_empty(const String *s) {
@@ -302,6 +301,9 @@ Err sstr_insert(String *s, size_t index, const char *slice) {
 
   if (new_len + 1 > s->cap) {
     size_t tmp_cap = (new_len + 1) * 2;
+    if (tmp_cap < new_len + 1) {
+      tmp_cap = new_len + 1;
+    }
 
     char *tmp_ptr = realloc(s->ptr, tmp_cap);
     if (tmp_ptr == NULL) {
@@ -324,7 +326,7 @@ Err sstr_insert(String *s, size_t index, const char *slice) {
   return SUCCESS;
 }
 
-Err sstr_copy(String *dest, String const *src) {
+Err sstr_copy(String *dest, const String *src) {
   if (src == NULL || dest == NULL) {
     return ERR_NULL_ARGUMENT;
   }
@@ -334,7 +336,7 @@ Err sstr_copy(String *dest, String const *src) {
   }
 
   if (dest->cap < src->len + 1) {
-    size_t tmp_cap = src->len * 2;
+    size_t tmp_cap = (src->len + 1) * 2;
     char *tmp_ptr = realloc(dest->ptr, tmp_cap);
 
     if (tmp_ptr == NULL) {
@@ -343,10 +345,6 @@ Err sstr_copy(String *dest, String const *src) {
 
     dest->ptr = tmp_ptr;
     dest->cap = tmp_cap;
-    sstr_memcpy(dest->ptr, src->ptr, src->len + 1);
-    dest->len = src->len;
-
-    return SUCCESS;
   }
 
   sstr_memcpy(dest->ptr, src->ptr, src->len + 1);
@@ -558,6 +556,10 @@ int sstr_cmp(const String *s1, const String *s2) {
     return ERR_NULL_ARGUMENT;
   }
 
+  if (s1->ptr == NULL || s2->ptr == NULL) {
+    return ERR_INVALID_STATE;
+  }
+
   const unsigned char *p1 = (const unsigned char *)s1->ptr;
   const unsigned char *p2 = (const unsigned char *)s2->ptr;
 
@@ -575,6 +577,10 @@ Err sstr_at(const String *s, size_t index, char *out) {
     return ERR_NULL_ARGUMENT;
   }
 
+  if (s->ptr == NULL) {
+    return ERR_INVALID_STATE;
+  }
+
   if (index >= s->len) {
     return ERR_OUT_OF_BOUNDS;
   }
@@ -586,6 +592,10 @@ Err sstr_at(const String *s, size_t index, char *out) {
 size_t sstr_find(const String *str, const char *substr) {
   if (str == NULL || substr == NULL) {
     return 0;
+  }
+
+  if (str->ptr == NULL) {
+    return SSTR_NPOS;
   }
 
   if (*substr == '\0') {
